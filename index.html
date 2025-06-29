@@ -1,33 +1,214 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Qunattun AI | Usuários</title>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin JSONBin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Brilho e flutuação */
-      .glow {
-        text-shadow: 0 0 10px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
-        animation: float 3s ease-in-out infinite;
-      }
+        @keyframes spin {
+            0% {
+                rotate: 0deg;
+            }
 
-      @keyframes float {
-        0%, 100% {
-          transform: translateY(0px);
+            100% {
+                rotate: 360deg;
+            }
         }
-        50% {
-          transform: translateY(-10px);
-        }
-      }
     </style>
-  </head>
-  <body class="bg-black min-h-screen flex flex-col items-center justify-start p-8">
-    <form class="flex flex-col items-center mt-[130px]">
-      <h2 class="text-5xl font-extrabold text-purple-700 glow mb-10"></h2>
-      <input type="password" id="password" class="rounded-[10px] p-3 text-center outline-none">
-      <button type="submit" class="text-white font-extrabold bg-violet-600 p-3 mt-5">Entrar</button>
-    </form>
-  </body>
-  <script src="./script.js"></script>
+</head>
+
+<body class="bg-gray-100 p-6 text-gray-900">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-purple-700 mb-6">Painel Admin JSONBin</h1>
+
+        <div id="auth" class="mb-6">
+            <label class="block mb-2 text-sm font-medium">Senha de Acesso:</label>
+            <input type="password" id="password" class="border rounded px-3 py-2 w-full max-w-sm"
+                placeholder="Digite a senha...">
+            <button onclick="checkPassword()"
+                class="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Entrar</button>
+        </div>
+
+        <div id="content" class="space-y-6 hidden">Carregando...</div>
+        <button onclick="saveData()" class="mt-6 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 hidden"
+            id="saveBtn">Salvar Alterações</button>
+    </div>
+
+    <div id="loading" class="rounded-full w-[99px] h-[99px]"
+        style="box-shadow: 0 0 3px 3px #6a6a6a30; display: none; position: absolute; top: 45%; right: 45%; animation: spin infinite .3s; border-top: 5px solid #8a2be2; border-left: 5px solid #6a6a6a30; border-bottom: 5px solid #6a6a6a30; border-right: 5px solid #6a6a6a30;">
+    </div>
+
+    <script>
+        function loading() {
+            const loading = document.getElementById("loading")
+
+            if (loading.style.display == "none") {
+                loading.style.display = "block"
+            } else {
+                loading.style.display = "none"
+            }
+        }
+
+        let dbData = {};
+        let API_URL = '';
+        let API_KEY = '';
+        let BIN_ID = '';
+
+        const secrets = {
+            key: 'JDJhJDEwJC9kLkg0SEtuVE1uZ2dnMXUucnhHZC54ZVZiS0h1MEI5cW1TNS5hMFI3WmlOdHREQXFVUVVx',
+            bin: 'Njg2MDUxOWY4NTYxZTk3YTUwMmRhNGQ4'
+        };
+
+        function checkPassword() {
+            const input = document.getElementById('password').value;
+
+            if (input === 's3cr3t.gustavo.999') {
+                loading()
+
+                BIN_ID = atob(secrets.bin);
+                API_KEY = atob(secrets.key);
+                API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}?meta=false`;
+
+                document.getElementById('auth').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+                document.getElementById('saveBtn').classList.remove('hidden');
+                fetchData();
+
+            } else {
+                alert('Senha incorreta!');
+            }
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch(API_URL, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': `${API_KEY}`
+                    }
+                });
+                const json = await res.json();
+                dbData = json;
+                renderUsers();
+            } catch (err) {
+                document.getElementById('content').textContent = 'Erro ao carregar: ' + err;
+            }
+        }
+
+        function renderUsers() {
+            const container = document.getElementById('content');
+            container.innerHTML = '';
+
+            const users = dbData.users;
+            if (!users) {
+                container.innerHTML = '<p class="text-gray-600">Nenhum usuário encontrado.</p>';
+                return;
+            }
+
+            Object.entries(users).forEach(([email, user]) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded shadow';
+
+                card.innerHTML = `
+          <h2 class="text-xl font-bold text-purple-600">${email}</h2>
+          <label class="block mt-2 text-sm">Nome:
+            <input class="w-full border rounded px-2 py-1 mt-1" value="${user.name || ''}" onchange="updateUser('${email}', 'name', this.value)">
+          </label>
+          <label class="block mt-2 text-sm">Pontos:
+            <input type="number" class="w-full border rounded px-2 py-1 mt-1" value="${user.points || 0}" onchange="updateUser('${email}', 'points', this.value)">
+          </label>
+
+          <div class="mt-4">
+            <h3 class="text-purple-500 font-semibold">Notas:</h3>
+            ${user.notes ? Object.entries(user.notes).map(([id, note]) => `
+              <label class="block mt-2 text-sm">${id}
+                <textarea class="w-full border rounded px-2 py-1 mt-1" onchange="updateNote('${email}', '${id}', this.value)">${note}</textarea>
+              </label>
+            `).join('') : '<p class="text-sm text-gray-500">Sem notas.</p>'}
+          </div>
+
+          <div class="mt-4">
+            <h3 class="text-purple-500 font-semibold">Rotas:</h3>
+            ${user.routes?.map((route, rIndex) => `
+                <div class="border p-3 rounded mt-3">
+                <h4 class="font-semibold text-lg">${route.title}</h4>
+                <p class="text-sm text-gray-600">Total de atividades: ${route.activities}</p>
+                <label class="block mt-2 text-sm">Atividades completas:
+                    <input type="number" class="w-full border rounded px-2 py-1 mt-1" value="${route.completedActivities}" onchange="updateRoute('${email}', ${rIndex}, 'completedActivities', this.value)">
+                    </label>
+                    <label class="block mt-2 text-sm">Marcar como completa:
+                        <input type="checkbox" ${route.completedActivities == route.activities ? 'checked' : ''} onchange="markRouteCompleted('${email}', ${rIndex}, this.checked)">
+                        </label>
+                        <div class="mt-2 text-sm">Atividades:</div>
+                        ${(route.studyPlan?.activities || []).map((act, aIndex) => `
+                            <div class="border p-2 mt-2 rounded">
+                                <div><strong>#${act.id}:</strong> ${act.title}</div>
+                                <label class="block text-sm mt-1">Completa:
+                                    <input type="checkbox" ${act.completed ? 'checked' : ''} onchange="toggleActivity('${email}', ${rIndex}, ${aIndex}, this.checked)">
+                                    </label>
+                                    
+                `).join('')}
+              </div>
+            `).join('') || '<p class="text-sm text-gray-500">Sem rotas.</p>'}
+          </div>
+        `;
+
+                container.appendChild(card);
+                loading()
+            });
+        }
+        
+        function updateUser(email, field, value) {
+            dbData.users[email][field] = value;
+        }
+
+        function updateNote(email, noteId, value) {
+            if (!dbData.users[email].notes) dbData.users[email].notes = {};
+            dbData.users[email].notes[noteId] = value;
+        }
+
+        function updateRoute(email, index, field, value) {
+            if (!dbData.users[email].routes) dbData.users[email].routes = [];
+            dbData.users[email].routes[index][field] = value;
+        }
+
+        function markRouteCompleted(email, routeIndex, checked) {
+            const route = dbData.users[email].routes[routeIndex];
+            const total = route.studyPlan?.activities?.length || 0;
+            route.completedActivities = checked ? total : 0;
+            if (route.studyPlan?.activities) {
+                route.studyPlan.activities.forEach(act => act.completed = checked);
+            }
+            renderUsers();
+        }
+
+        function toggleActivity(email, routeIndex, activityIndex, checked) {
+            const activity = dbData.users[email].routes[routeIndex].studyPlan.activities[activityIndex];
+            activity.completed = checked;
+            const allActivities = dbData.users[email].routes[routeIndex].studyPlan.activities;
+            const completedCount = allActivities.filter(a => a.completed).length;
+            dbData.users[email].routes[routeIndex].completedActivities = completedCount;
+        }
+
+        async function saveData() {
+            loading()
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': `${API_KEY}`
+                    },
+                    body: JSON.stringify(dbData)
+                });
+                alert('Dados salvos com sucesso!');
+            } catch (err) {
+                alert('Erro ao salvar: ' + err);
+            }
+            loading()
+        }
+    </script>
+</body>
+
 </html>
