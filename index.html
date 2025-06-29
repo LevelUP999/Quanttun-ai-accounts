@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qunattun AI | Usuários</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Brilho e flutuação */
+      .glow {
+        text-shadow: 0 0 10px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+        animation: float 3s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-black min-h-screen flex flex-col items-center justify-start p-8">
+    <form class="flex flex-col items-center mt-[130px]">
+      <h2 class="text-5xl font-extrabold text-purple-700 glow mb-10"></h2>
+      <input type="password" id="password" class="rounded-[10px] p-3 text-center outline-none">
+      <button type="submit" class="text-white font-extrabold bg-violet-600 p-3 mt-5">Entrar</button>
+    </form>
+  </body>
+  <script src="./script.js"></script>
+</html>
